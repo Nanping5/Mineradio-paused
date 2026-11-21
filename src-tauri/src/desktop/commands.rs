@@ -174,6 +174,16 @@ pub fn get_runtime_endpoints(state: tauri::State<'_, Arc<TauriAppState>>) -> Val
     })
 }
 
+/// 退出看门狗：app.exit(0) 依赖事件循环完成收尾；若收尾流程（子窗口销毁、
+/// Win32 桌面挂载清理等）在个别环境卡住，2 秒后强制结束进程，保证
+/// 「退出应用 / 托盘退出 / 关闭按钮直接退出」在任何情况下都能真正关掉应用。
+pub fn spawn_exit_watchdog() {
+    std::thread::spawn(|| {
+        std::thread::sleep(std::time::Duration::from_secs(2));
+        std::process::exit(0);
+    });
+}
+
 /// 在应用真正退出前执行清理：恢复桌面图标、解除 WorkerW 挂载、关闭鼠标穿透及销毁子窗口。
 pub fn cleanup_before_app_exit(app: &AppHandle, state: &TauriAppState) {
     state.pointer_poll_seq.fetch_add(1, Ordering::AcqRel);
@@ -293,6 +303,7 @@ pub fn desktop_window_close(
         .unwrap_or_else(|| lock_unpoisoned(&state.close_behavior).clone());
     if resolved == "quit" {
         cleanup_before_app_exit(&app, &state);
+        spawn_exit_watchdog();
         app.exit(0);
         return json!({ "ok": true, "behavior": "quit" });
     }

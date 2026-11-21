@@ -286,6 +286,24 @@ export function FxConsoleModal({ onToast }: FxConsoleModalProps): React.ReactEle
     onToast?.(behavior === 'exit' ? '关闭按钮行为：直接退出' : '关闭按钮行为：最小化到托盘');
   };
 
+  const [quitArmed, setQuitArmed] = useState(false);
+  useEffect(() => {
+    if (!quitArmed) return undefined;
+    const timer = window.setTimeout(() => setQuitArmed(false), 4000);
+    return () => window.clearTimeout(timer);
+  }, [quitArmed]);
+
+  const handleQuitApp = async () => {
+    if (!quitArmed) {
+      setQuitArmed(true);
+      onToast?.('再次点击以确认彻底退出 MineradioX');
+      return;
+    }
+    setQuitArmed(false);
+    onToast?.('正在退出 MineradioX…');
+    await desktopWindow.close('quit');
+  };
+
   const toggleFastSkip = () => {
     const next = !fastSkip;
     setFastSkip(next);
@@ -1494,6 +1512,27 @@ export function FxConsoleModal({ onToast }: FxConsoleModalProps): React.ReactEle
               >
                 最小化到托盘
               </button>
+            </div>
+
+            <div className="fx-section-label">退出应用</div>
+            <div
+              className="fx-actions"
+              id="quit-app-actions"
+              style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}
+            >
+              <button
+                id="quit-app-btn"
+                className="fx-mini-btn"
+                type="button"
+                onClick={() => {
+                  handleQuitApp().catch(() => {});
+                }}
+              >
+                {quitArmed ? '再次点击确认退出应用' : '退出应用（彻底结束进程）'}
+              </button>
+            </div>
+            <div className="fx-sub">
+              托盘菜单无法弹出、或窗口已隐藏到托盘时，可在此彻底结束进程；也可把「关闭窗口行为」改为「直接退出」。
             </div>
 
             <div className="fx-section-label">启动与渲染性能</div>

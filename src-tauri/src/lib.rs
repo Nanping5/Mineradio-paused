@@ -317,7 +317,7 @@ pub fn run() {
             if let Ok(tray_icon_img) = tauri::image::Image::from_bytes(icon_bytes) {
                 let _tray = TrayIconBuilder::with_id("mineradio-tray")
                     .icon(tray_icon_img)
-                    .tooltip("MineradioX")
+                    .tooltip("MineradioX｜左键显示窗口；若右键菜单无法弹出，请在窗口内 FX 控制台→系统→退出应用 彻底退出")
                     .menu(&tray_menu)
                     .on_menu_event(|app, event| match event.id().as_ref() {
                         "tray_show" => {
@@ -359,6 +359,7 @@ pub fn run() {
                         "tray_quit" => {
                             let state = app.state::<Arc<TauriAppState>>();
                             commands::cleanup_before_app_exit(app, &state);
+                            commands::spawn_exit_watchdog();
                             app.exit(0);
                         }
                         _ => {}

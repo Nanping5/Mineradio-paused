@@ -21,6 +21,7 @@ export function TitleBar({
   const setDiyMode = usePlayerStore((s) => s.setDiyMode);
   const updateInfo = usePlayerStore((s) => s.updateInfo);
   const [windowMaximized, setWindowMaximized] = useState(isMaximized);
+  const [closeBehavior, setCloseBehavior] = useState<string>('tray');
 
   useEffect(() => {
     setWindowMaximized(isMaximized);
@@ -31,8 +32,22 @@ export function TitleBar({
       if (typeof state?.isMaximized === 'boolean') {
         setWindowMaximized(state.isMaximized);
       }
+      if (typeof state?.closeBehavior === 'string' && state.closeBehavior) {
+        setCloseBehavior(state.closeBehavior);
+      }
     });
     return unlisten;
+  }, []);
+
+  useEffect(() => {
+    desktopWindow
+      .getCloseBehavior()
+      .then((res) => {
+        if (res && typeof res.behavior === 'string' && res.behavior) {
+          setCloseBehavior(res.behavior);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const hasUpdate = Boolean(updateInfo?.updateAvailable ?? updateInfo?.hasUpdate);
@@ -141,8 +156,8 @@ export function TitleBar({
             onClick={() => {
               desktopWindow.close().catch(() => {});
             }}
-            title="关闭"
-            aria-label="关闭"
+            title={closeBehavior === 'tray' ? '关闭（最小化到托盘）' : '关闭（退出应用）'}
+            aria-label={closeBehavior === 'tray' ? '关闭（最小化到托盘）' : '关闭（退出应用）'}
           >
             <svg viewBox="0 0 16 16" aria-hidden="true">
               <path d="M4 4l8 8M12 4l-8 8" />

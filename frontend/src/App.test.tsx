@@ -507,6 +507,23 @@ describe('Mineradio UI & Desktop Lyrics', () => {
     });
   });
 
+  it('FxConsoleModal 系统页退出应用按钮需二次确认并调用 quit 关闭', async () => {
+    const closeSpy = vi.spyOn(desktopWindow, 'close').mockResolvedValue({ ok: true } as never);
+    usePlayerStore.setState({ fxPanelOpen: true });
+
+    render(<FxConsoleModal />);
+    fireEvent.click(screen.getByRole('tab', { name: '系统' }));
+
+    const quitBtn = await screen.findByRole('button', { name: '退出应用（彻底结束进程）' });
+    fireEvent.click(quitBtn);
+    expect(closeSpy).not.toHaveBeenCalled();
+
+    const armedBtn = await screen.findByRole('button', { name: '再次点击确认退出应用' });
+    fireEvent.click(armedBtn);
+    await waitFor(() => expect(closeSpy).toHaveBeenCalledWith('quit'));
+    closeSpy.mockRestore();
+  });
+
   it('TrackDetailModal 汽水评论使用 /api/qishui/song/comments 契约端点', async () => {
     const fetchMock = vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
       const url = String(input);
